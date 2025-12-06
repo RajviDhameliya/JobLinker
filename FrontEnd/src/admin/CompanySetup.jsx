@@ -1,16 +1,19 @@
 import React, { useEffect, useState } from 'react'
+import Navbar from '@/components/shared/Navbar'
+import { Button } from '@/components/ui/button'
 import { ArrowLeft, Loader2 } from 'lucide-react'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
-import Navbar from '@/components/shared/Navbar'
-import { Button } from '@/components/ui/button'
+import axios from 'axios'
+import { COMPANY_API_END_POINT } from '@/utils/constant'
 import { useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import { useSelector } from 'react-redux'
-import axios from 'axios'
-import { COMPANY_API_END_POINT } from '@/utils/constant'
+import useGetCompanyById from '@/hooks/useGetCompanyById'
 
 const CompanySetup = () => {
+    const params = useParams();
+    useGetCompanyById(params.id);
     const [input, setInput] = useState({
         name: "",
         description: "",
@@ -18,14 +21,14 @@ const CompanySetup = () => {
         location: "",
         file: null
     });
-    const {singleCompany} = useSelector(store => store.company);
+    const {singleCompany} = useSelector(store=>store.company);
     const [loading, setLoading] = useState(false);
-    const params = useParams();
     const navigate = useNavigate();
 
     const changeEventHandler = (e) => {
         setInput({ ...input, [e.target.name]: e.target.value });
-    };
+    }
+
     const changeFileHandler = (e) => {
         const file = e.target.files?.[0];
         setInput({ ...input, file });
@@ -41,7 +44,6 @@ const CompanySetup = () => {
         if (input.file) {
             formData.append("file", input.file);
         }
-
         try {
             setLoading(true);
             const res = await axios.put(`${COMPANY_API_END_POINT}/update/${params.id}`, formData, {
@@ -56,7 +58,7 @@ const CompanySetup = () => {
             }
         } catch (error) {
             console.log(error);
-            toast.error(error.response?.data?.message || "Something went wrong");
+            toast.error(error.response.data.message);
         } finally {
             setLoading(false);
         }
@@ -64,20 +66,21 @@ const CompanySetup = () => {
 
     useEffect(() => {
         setInput({
-            name:singleCompany.name || "",
+            name: singleCompany.name || "",
             description: singleCompany.description || "",
-            website:singleCompany.website || "",
+            website: singleCompany.website || "",
             location: singleCompany.location || "",
-            file:singleCompany.file || null
-        });
-},[singleCompany]);
-    return(
+            file: singleCompany.file || null
+        })
+    },[singleCompany]);
+
+    return (
         <div>
             <Navbar />
             <div className='max-w-xl mx-auto my-10'>
-                <form onSubmit={submitHandler} >
+                <form onSubmit={submitHandler}>
                     <div className='flex items-center gap-5 p-8'>
-                        <Button onClick={()=>navigate("/admin/companies")} variant="outline" className="flex items-center gap-2 text-gray-500 font-semibold">
+                        <Button onClick={() => navigate("/admin/companies")} variant="outline" className="flex items-center gap-2 text-gray-500 font-semibold">
                             <ArrowLeft />
                             <span>Back</span>
                         </Button>
@@ -130,14 +133,13 @@ const CompanySetup = () => {
                         </div>
                     </div>
                     {
-                        loading ? <Button className='w-full my-4'> <Loader2 className='mr-2 h-4 w-4 animate-spin' />Please wait</Button> : <Button type="submit" className="w-full my-4">Update</Button>
+                        loading ? <Button className="w-full my-4"> <Loader2 className='mr-2 h-4 w-4 animate-spin' /> Please wait </Button> : <Button type="submit" className="w-full my-4">Update</Button>
                     }
-
                 </form>
             </div>
-        </div >
+
+        </div>
     )
 }
-
 
 export default CompanySetup

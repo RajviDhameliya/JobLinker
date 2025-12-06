@@ -15,8 +15,19 @@ export const register = async (req, res) => {
             });
         };
         const file = req.file;
-        const fileUri = getDataUri(file);
-        const cloudResponse = await cloudinary.uploader.upload(fileUri.content);
+        let cloudResponse = null;
+        if (file) {
+            const fileUri = getDataUri(file);
+            if (fileUri) {
+                const options = {};
+                if (file.mimetype && file.mimetype.startsWith('image/')) {
+                    options.resource_type = 'image';
+                } else {
+                    options.resource_type = 'raw';
+                }
+                cloudResponse = await cloudinary.uploader.upload(fileUri.content, options);
+            }
+        }
 
         const user = await User.findOne({ email });
         if (user) {
@@ -34,7 +45,7 @@ export const register = async (req, res) => {
             password: hashedPassword,
             role,
             profile:{
-                profilePhoto:cloudResponse.secure_url,
+                profilePhoto: cloudResponse?.secure_url || null,
             }
         });
 
@@ -101,6 +112,68 @@ export const login = async (req, res) => {
         console.log(error);
     }
 }
+
+export const updateProfilePhoto = async (req, res) => {
+    try {
+        const file = req.file;
+
+        if (!file) {
+            return res.status(400).json({
+                message: "Please upload an image",
+                success: false
+            });
+        }
+
+        // Convert file buffer to data URI
+        const fileUri = getDataUri(file);
+
+        // Upload to Cloudinary
+        const uploadOptions = {};
+        if (file.mimetype.startsWith("image/")) {
+            uploadOptions.resource_type = "image";
+        } else {
+            return res.status(400).json({
+                message: "Invalid file type. Only images allowed.",
+                success: false,
+            });
+        }
+
+        const cloudResponse = await cloudinary.uploader.upload(
+            fileUri.content,
+            uploadOptions
+        );
+
+        // Find current user
+        const userId = req.id;
+        let user = await User.findById(userId);
+
+        if (!user) {
+            return res.status(404).json({
+                message: "User not found",
+                success: false
+            });
+        }
+
+        // Save profile photo URL
+        user.profile.profilePhoto = cloudResponse.secure_url;
+
+        await user.save();
+
+        return res.status(200).json({
+            message: "Profile photo updated successfully",
+            profilePhoto: user.profile.profilePhoto,
+            success: true
+        });
+
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({
+            message: "Server Error",
+            success: false
+        });
+    }
+};
+
 export const logout = async (req, res) => {
     try {
         return res.status(200).cookie("token", "", { maxAge: 0 }).json({
@@ -116,9 +189,20 @@ export const updateProfile = async (req, res) => {
         const { fullname, email, phoneNumber, bio, skills } = req.body;
         
         const file = req.file;
-        // cloudinary ayega idhar
-        const fileUri = getDataUri(file);
-        const cloudResponse = await cloudinary.uploader.upload(fileUri.content);
+        // cloudinary upload only if file provided
+        let cloudResponse = null;
+        if (file) {
+            const fileUri = getDataUri(file);
+            if (fileUri) {
+                const options = {};
+                if (file.mimetype && file.mimetype.startsWith('image/')) {
+                    options.resource_type = 'image';
+                } else {
+                    options.resource_type = 'raw';
+                }
+                cloudResponse = await cloudinary.uploader.upload(fileUri.content, options);
+            }
+        }
 
 
 
@@ -137,15 +221,27 @@ export const updateProfile = async (req, res) => {
         }
         // updating data
         if(fullname) user.fullname = fullname
-        if(email) user.email = email
+        if (email) {
+            // if user is attempting to change email, ensure it's not used by another account
+            if (email !== user.email) {
+                const existingUser = await User.findOne({ email });
+                if (existingUser) {
+                    return res.status(400).json({
+                        message: "Email is already in use by another account.",
+                        success: false
+                    });
+                }
+                user.email = email;
+            }
+        }
         if(phoneNumber)  user.phoneNumber = phoneNumber
         if(bio) user.profile.bio = bio
         if(skills) user.profile.skills = skillsArray
       
         // resume comes later here...
-        if(cloudResponse){
+        if (cloudResponse) {
             user.profile.resume = cloudResponse.secure_url // save the cloudinary url
-            user.profile.resumeOriginalName = file.originalname // Save the original file name
+            user.profile.resumeOriginalName = file?.originalname || '' // Save the original file name if available
         }
 
 
