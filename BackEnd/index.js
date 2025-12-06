@@ -19,8 +19,7 @@ app.use(cookieParser());
 const corsOptions = {
   origin: [
     "http://localhost:5173",
-    "https://job-linker-lovat.vercel.app",
-    "https://joblinker-hb4r.onrender.com"   // add your backend URL
+    "https://job-linker-lovat.vercel.app"
   ],
   credentials: true,
 };
