@@ -194,9 +194,10 @@ Import the Postman collection to test all API endpoints. Ensure you:
 ## 🚀 Deployment
 
 ### Frontend (Vercel)
+-- https://job-linker-lovat.vercel.app
 
 ### Backend (Render)
-
+-- https://joblinker-hb4r.onrender.com
 
 ---
 
