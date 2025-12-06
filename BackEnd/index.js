@@ -18,11 +18,13 @@ app.use(express.urlencoded({extended:true}));
 app.use(cookieParser());
 const corsOptions = {
   origin: [
-    "http://localhost:5173",                     // local dev
-    "https://job-linker-lovat.vercel.app",      // your Vercel domain
+    "http://localhost:5173",
+    "https://job-linker-lovat.vercel.app",
+    "https://joblinker-hb4r.onrender.com"   // add your backend URL
   ],
   credentials: true,
 };
+
 
 
 app.use(cors(corsOptions));
