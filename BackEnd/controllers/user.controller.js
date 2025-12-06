@@ -46,6 +46,10 @@ export const register = async (req, res) => {
             role,
             profile: {
                 profilePhoto: cloudResponse?.secure_url || null,
+                bio: "",
+                skills: [],
+                resume: "",
+                resumeOriginalName: ""
             }
         });
 
